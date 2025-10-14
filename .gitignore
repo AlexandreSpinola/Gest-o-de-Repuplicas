@@ -1,0 +1,28 @@
+# Django-specific files
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+/media/ # User-uploaded media files
+
+# Virtual Environment
+.env
+venv/
+env/
+
+# IDE-specific files (e.g., PyCharm)
+.idea/
+*.sublime-workspace
+*.sublime-project
+.vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Other common ignored files
+.coverage
+.tox/
+.eggs/
