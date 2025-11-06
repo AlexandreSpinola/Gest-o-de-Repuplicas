@@ -6,11 +6,11 @@ from .views import (
     RepublicaCreateView,
     RepublicaListView,
     SolicitarEntradaRepublicaView,
-    AprovarMoradorView,          # <-- ADICIONE ESTE
-    RejeitarMoradorView,          # <-- ADICIONE ESTE
+    AprovarMoradorView,  
+    RejeitarMoradorView,          
     ContaCreateView,
-    ConfirmarPagamentoView,  # <-- ADICIONE
-    RejeitarPagamentoView,   # <-- ADICIONE
+    ConfirmarPagamentoView,
+    RejeitarPagamentoView,
     ContaDeleteView,
     RemoverMoradorView
 )
@@ -20,8 +20,6 @@ app_name = 'gestao'
 urlpatterns = [
     path('', DashboardView.as_view(), name='dashboard'),
     path('marcar-pago/<int:pk>/', MarcarComoPagoView.as_view(), name='marcar_pago'),
-    
-    # NOVAS ROTAS
     path('republica/nova/', RepublicaCreateView.as_view(), name='republica_nova'),
     path('republicas/', RepublicaListView.as_view(), name='republica_list'),
     path('republicas/solicitar/<int:pk>/', SolicitarEntradaRepublicaView.as_view(), name='solicitar_entrada'),

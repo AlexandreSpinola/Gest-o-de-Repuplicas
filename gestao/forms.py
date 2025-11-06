@@ -1,4 +1,3 @@
-# gestao/forms.py
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import Usuario, Conta
 from django import forms
@@ -6,8 +5,6 @@ from django import forms
 class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = Usuario
-        # Adicione os campos que você quer no formulário de registro
-        # 'username' e 'password' já estão incluídos por padrão
         fields = ('username', 'email', 'apelido')
 
 class CustomUserChangeForm(UserChangeForm):
@@ -16,11 +13,9 @@ class CustomUserChangeForm(UserChangeForm):
         fields = ('username', 'email', 'apelido')
 
 class ContaCreateForm(forms.ModelForm):
-    # Este campo 'participantes' não existe no modelo Conta,
-    # estamos criando ele SÓ para o formulário
     participantes = forms.ModelMultipleChoiceField(
-        queryset=Usuario.objects.none(), # O queryset real será definido na view
-        widget=forms.CheckboxSelectMultiple, # Queremos checkboxes
+        queryset=Usuario.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
         required=True,
         label="Participantes da conta"
     )
@@ -28,7 +23,7 @@ class ContaCreateForm(forms.ModelForm):
     class Meta:
         model = Conta
         fields = ['nome_conta', 'valor_total', 'data_vencimento', 'tipo']
-        # Adiciona widgets para os campos de data e valor
+        
         widgets = {
             'data_vencimento': forms.DateInput(attrs={'type': 'date'}),
             'valor_total': forms.NumberInput(attrs={'step': '0.01'}),

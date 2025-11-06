@@ -1,17 +1,15 @@
-# gestao/views.py
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, CreateView, View , DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.contrib import messages # Para dar feedback ao usuário
+from django.contrib import messages 
 from .models import Conta, ParticipanteConta, Republica, Usuario
 from .forms import CustomUserCreationForm ,ContaCreateForm
-from datetime import date # Vamos usar para verificar contas atrasadas
+from datetime import date
 from django.db.models import Q 
 from django.contrib.auth import logout
 from django.http import HttpResponseRedirect
 
-# View de Registro (Você já tem essa)
 class RegisterView(CreateView):
     form_class = CustomUserCreationForm
     success_url = reverse_lazy('login')
@@ -43,7 +41,7 @@ class DashboardView(LoginRequiredMixin, ListView):
         
         user = self.request.user
 
-        # Painel do ADM (aprovar novos moradores) - VOCÊ JÁ TEM ISSO
+        # Painel do ADM (aprovar novos moradores)
         if user.republica and user == user.republica.adm:
             solicitacoes = Usuario.objects.filter(
                 republica=user.republica,
@@ -51,14 +49,14 @@ class DashboardView(LoginRequiredMixin, ListView):
             )
             context['lista_solicitacoes'] = solicitacoes
 
-            # 2. NOVO: Busca moradores ATUAIS (aprovados)
+            # Busca moradores ATUAIS (aprovados)
             moradores_atuais = Usuario.objects.filter(
                 republica=user.republica,
                 status_associacao=Usuario.StatusAssociacao.APROVADO
             ).order_by('username')
             context['lista_moradores'] = moradores_atuais
 
-        # NOVO: Painel do RESPONSÁVEL (confirmar pagamentos)
+        # Painel do RESPONSÁVEL (confirmar pagamentos)
         # Busca todas as participações onde:
         # 1. O status é 'CONFIRMACAO_PENDENTE'
         # 2. O usuário logado (user) é o 'responsavel' da conta associada
@@ -73,28 +71,25 @@ class DashboardView(LoginRequiredMixin, ListView):
         return context
 
 
-# NOVO: Esta view cuida do clique no botão "Paguei"
 class MarcarComoPagoView(LoginRequiredMixin, View):
     
     def post(self, request, *args, **kwargs):
         pk_participacao = self.kwargs.get('pk')
         participacao = get_object_or_404(ParticipanteConta, pk=pk_participacao)
 
-        # Checagem de segurança (igual a antes)
         if participacao.usuario != request.user:
             messages.error(request, 'Acesso não autorizado.')
             return redirect('gestao:dashboard')
 
         if participacao.status_pagamento == 'NAO_PAGO':
             
-            # MUDANÇA: Lógica de auto-aprovação
             # O usuário logado é o responsável (dono) da conta?
             if request.user == participacao.conta.responsavel:
                 participacao.status_pagamento = ParticipanteConta.StatusPagamento.PAGO
                 participacao.save()
                 messages.success(request, 'Seu pagamento (como responsável) foi confirmado.')
             else:
-                # Se não for o dono, entra na fila de confirmação (como antes)
+                # Se não for o dono, entra na fila de confirmação
                 participacao.status_pagamento = ParticipanteConta.StatusPagamento.CONFIRMACAO_PENDENTE
                 participacao.save()
                 messages.success(request, 'Pagamento marcado! Aguardando confirmação do responsável.')
@@ -128,7 +123,7 @@ class RepublicaCreateView(LoginRequiredMixin, CreateView):
         return response
 
     def get(self, request, *args, **kwargs):
-        # Checagem: Se o usuário já tem uma república, não pode criar outra
+        # Se o usuário já tem uma república, não pode criar outra
         if request.user.republica:
             messages.error(request, 'Você já faz parte de uma república.')
             return redirect('gestao:dashboard')
@@ -139,7 +134,7 @@ class RepublicaListView(LoginRequiredMixin, ListView):
     model = Republica
     template_name = 'gestao/republica_list.html'
     context_object_name = 'republicas'
-    paginate_by = 10 # Bom para quando tiver muitas
+    paginate_by = 10
 
     def get_queryset(self):
         # Pega o parâmetro 'q' da URL (ex: /republicas/?q=Galo)
@@ -154,14 +149,14 @@ class RepublicaListView(LoginRequiredMixin, ListView):
         return object_list.order_by('nome')
 
     def get(self, request, *args, **kwargs):
-        # Checagem: Se o usuário já tem uma república, não pode procurar outra
+        # Se o usuário já tem uma república, não pode procurar outra
         if request.user.republica:
             messages.error(request, 'Você já faz parte de uma república.')
             return redirect('gestao:dashboard')
         return super().get(request, *args, **kwargs)
 
 
-# NOVA VIEW: Processar a solicitação de entrada
+# Processar a solicitação de entrada
 class SolicitarEntradaRepublicaView(LoginRequiredMixin, View):
     
     def post(self, request, *args, **kwargs):
@@ -169,7 +164,7 @@ class SolicitarEntradaRepublicaView(LoginRequiredMixin, View):
         republica = get_object_or_404(Republica, pk=republica_pk)
         user = request.user
         
-        # Checagem dupla: não pode solicitar se já está em uma
+        # não pode solicitar se já está em uma
         if user.republica:
             messages.error(request, 'Você já está em uma república.')
             return redirect('gestao:dashboard')
@@ -195,9 +190,8 @@ class AprovarMoradorView(LoginRequiredMixin, View):
         # O usuário logado (o Gustavo)
         adm = request.user
 
-        # CHECAGEM DE SEGURANÇA:
         # 1. O usuário a aprovar tem que estar ligado a uma república
-        # 2. O usuário logado (adm) tem que ser o ADM *dessa* república
+        # 2. O usuário logado (adm) tem que ser o ADM dessa república
         if not usuario_a_aprovar.republica or adm != usuario_a_aprovar.republica.adm:
             messages.error(request, 'Você não tem permissão para esta ação.')
             return redirect('gestao:dashboard')
@@ -213,7 +207,7 @@ class AprovarMoradorView(LoginRequiredMixin, View):
         return redirect('gestao:dashboard')
 
 
-# NOVA VIEW: Rejeitar Morador
+# Rejeitar Morador
 class RejeitarMoradorView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
@@ -223,7 +217,6 @@ class RejeitarMoradorView(LoginRequiredMixin, View):
         
         adm = request.user
 
-        # Mesma checagem de segurança
         if not usuario_a_rejeitar.republica or adm != usuario_a_rejeitar.republica.adm:
             messages.error(request, 'Você não tem permissão para esta ação.')
             return redirect('gestao:dashboard')
@@ -245,7 +238,7 @@ class RejeitarMoradorView(LoginRequiredMixin, View):
 
 class ContaCreateView(LoginRequiredMixin, CreateView):
     model = Conta
-    form_class = ContaCreateForm # MUDANÇA: Usando nosso formulário customizado
+    form_class = ContaCreateForm
     template_name = 'gestao/conta_form.html'
     success_url = reverse_lazy('gestao:dashboard')
 
@@ -264,21 +257,17 @@ class ContaCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         user = self.request.user
         
-        # 1. Define o responsável e a república (igual a antes)
         form.instance.responsavel = user
         form.instance.republica = user.republica
         
-        # 2. Salva a Conta principal (igual a antes)
         response = super().form_valid(form)
-        
-        # 3. MUDANÇA: Pega os participantes E FORÇA A INCLUSÃO DO CRIADOR
+
         nova_conta = self.object
         participantes_selecionados_do_form = form.cleaned_data['participantes']
         
         # Pega o próprio usuário logado como um QuerySet
         criador_como_queryset = Usuario.objects.filter(pk=user.pk)
         
-        # Usa o operador '|' (union) para juntar os dois QuerySets
         # Isso garante que o criador esteja na lista, sem duplicatas.
         participantes_finais = participantes_selecionados_do_form | criador_como_queryset
         
@@ -313,10 +302,8 @@ class ConfirmarPagamentoView(LoginRequiredMixin, View):
         participacao_pk = self.kwargs.get('pk')
         participacao = get_object_or_404(ParticipanteConta, pk=participacao_pk)
         
-        # O usuário logado (o Gustavo)
         responsavel = request.user
 
-        # CHECAGEM DE SEGURANÇA CRÍTICA:
         # O usuário logado é o 'responsavel' (dono) desta conta?
         if participacao.conta.responsavel != responsavel:
             messages.error(request, 'Você não tem permissão para confirmar este pagamento.')
@@ -333,7 +320,7 @@ class ConfirmarPagamentoView(LoginRequiredMixin, View):
         return redirect('gestao:dashboard')
 
 
-# NOVA VIEW: Rejeitar o pagamento de um participante
+# Rejeitar o pagamento de um participante
 class RejeitarPagamentoView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
@@ -386,8 +373,6 @@ class UsuarioDeleteView(LoginRequiredMixin, DeleteView):
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
-
-        # --- Nossas checagens de segurança (iguais a antes) ---
         
         # REGRA 1: É ADM de uma república?
         try:
@@ -402,9 +387,6 @@ class UsuarioDeleteView(LoginRequiredMixin, DeleteView):
             messages.error(request, 'Você não pode deletar sua conta pois é o responsável por uma ou mais contas. Delete essas contas primeiro.')
             return redirect('gestao:dashboard')
         
-        
-        # --- A LÓGICA CORRIGIDA (DE NOVO) ---
-        
         # 1. PRIMEIRO, deletamos o usuário do banco de dados
         user.delete()
         
@@ -412,7 +394,6 @@ class UsuarioDeleteView(LoginRequiredMixin, DeleteView):
         logout(request)
         
         # 3. TERCEIRO, redirecionamos.
-        #    A MUDANÇA ESTÁ AQUI:
         #    Em vez de chamar self.get_success_url() (que quebrou),
         #    nós simplesmente usamos o valor de self.success_url
         return HttpResponseRedirect(self.success_url)
@@ -428,17 +409,17 @@ class RemoverMoradorView(LoginRequiredMixin, View):
         # 'adm' é o usuário logado
         adm = request.user
 
-        # CHECAGEM DE SEGURANÇA 1: O usuário logado é o ADM?
+        # O usuário logado é o ADM?
         if not morador_a_remover.republica or morador_a_remover.republica.adm != adm:
             messages.error(request, 'Você não tem permissão para remover este usuário.')
             return redirect('gestao:dashboard')
 
-        # CHECAGEM DE SEGURANÇA 2: O ADM está tentando se remover?
+        # O ADM está tentando se remover?
         if adm == morador_a_remover:
             messages.error(request, 'Você não pode remover a si mesmo como administrador.')
             return redirect('gestao:dashboard')
             
-        # CHECAGEM DE SEGURANÇA 3: O morador é responsável por alguma conta?
+        # O morador é responsável por alguma conta?
         if morador_a_remover.contas_responsaveis.exists():
             messages.error(request, f'{morador_a_remover.username} é responsável por uma ou mais contas. Delete essas contas primeiro antes de removê-lo.')
             return redirect('gestao:dashboard')
