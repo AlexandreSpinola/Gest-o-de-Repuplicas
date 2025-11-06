@@ -5,7 +5,7 @@ from django.conf import settings
 class Usuario(AbstractUser):
     class StatusAssociacao(models.TextChoices):
         AGUARDANDO_APROVACAO = 'AGUARDANDO_APROVACAO', 'Aguardando Aprovacao'
-        APROVADO = 'PARCIALMENTE_PAGA', 'Aprovado'
+        APROVADO = 'APROVADO', 'Aprovado'
         NAO_APROVADO = 'NAO_APROVADO', 'Nao Aprovado'
     
     apelido = models.CharField(max_length=50, blank=True, null=True)

@@ -124,3 +124,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # config/settings.py (no final do arquivo)
 AUTH_USER_MODEL = 'gestao.Usuario'
+
+
+# config/settings.py
+LOGIN_REDIRECT_URL = '/dashboard/' # Para onde vai depois do login
+LOGOUT_REDIRECT_URL = '/' # Para onde vai depois do logout (pode ser /contas/login/)
+LOGIN_URL = '/contas/login/' # Onde fica a página de login

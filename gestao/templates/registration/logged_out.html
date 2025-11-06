@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Saiu!</title>
+    <style>
+        /* (Seu CSS de login aqui) */
+        body { font-family: sans-serif; display: grid; place-items: center; min-height: 90vh; background-color: #f9f9f9; }
+        .form-container { background: #fff; border: 1px solid #ccc; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Você saiu!</h2>
+        <p>Obrigado por usar o sistema.</p>
+        <p><a href="{% url 'login' %}">Fazer login novamente</a></p>
+    </div>
+</body>
+</html>

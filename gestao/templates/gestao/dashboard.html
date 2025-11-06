@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Minha República</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background-color: #f4f7f6; }
+        h1, h2, h3 { color: #333; }
+        table { width: 100%; border-collapse: collapse; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background: #fff; }
+        th, td { border-bottom: 1px solid #ddd; padding: 12px 15px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .atrasado { color: #d9534f; font-weight: bold; }
+        .hoje { color: #f0ad4e; font-weight: bold; }
+        .valor { font-weight: bold; color: #0275d8; }
+        .btn-pagar {
+            background-color: #5cb85c; color: white;
+            padding: 8px 12px; border: none;
+            border-radius: 4px; cursor: pointer;
+            font-size: 0.9em;
+        }
+        .btn-pagar:hover { background-color: #4cae4c; }
+        
+        /* Para mostrar as mensagens de feedback */
+        .messages {
+            list-style-type: none; padding: 0; margin: 1em 0;
+        }
+        .messages li {
+            padding: 10px; border-radius: 4px; margin-bottom: 10px;
+        }
+        .messages .success { background-color: #dff0d8; color: #3c763d; border: 1px solid #d6e9c6; }
+        .messages .error { background-color: #f2dede; color: #a94442; border: 1px solid #ebccd1; }
+        .messages .warning { background-color: #fcf8e3; color: #8a6d3b; border: 1px solid #faebcc; }
+
+    </style>
+</head>
+<body>
+
+    <h1>Dashboard da República</h1>
+    <h2>Olá, {{ user.username }}!</h2>
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <hr>
+
+    <nav style="margin-bottom: 20px;">
+        {% if not user.republica %}
+            <p>Você ainda não está em uma república.</p>
+            <a href="{% url 'gestao:republica_list' %}" style="padding: 10px; background: #0275d8; color: white; text-decoration: none; border-radius: 4px;">Encontrar uma República</a>
+            <a href="{% url 'gestao:republica_nova' %}" style="padding: 10px; background: #5cb85c; color: white; text-decoration: none; border-radius: 4px;">Criar minha República</a>
+        
+        {% elif user.status_associacao == "AGUARDANDO_APROVACAO" %}
+            <p style="color: #f0ad4e; font-weight: bold;">Sua solicitação para entrar em "{{ user.republica.nome }}" está aguardando aprovação do administrador.</p>
+        
+        {% else %}
+            <h3 style="margin-top:0;">República: {{ user.republica.nome }}</h3>
+            
+            <a href="{% url 'gestao:conta_nova' %}" style="padding: 10px; background: #5cb85c; color: white; text-decoration: none; border-radius: 4px; font-size: 0.9em;">+ Adicionar Nova Conta</a>
+            {% endif %}
+    </nav>
+
+    {% if lista_solicitacoes %}
+        <div style="background: #fff8e1; border: 1px solid #ffeccc; padding: 15px; border-radius: 5px; margin-top: 20px;">
+            <h3>Solicitações Pendentes</h3>
+            <p>Os seguintes usuários pediram para entrar na sua república:</p>
+            
+            <table style="width: 100%;">
+                <thead>
+                    <tr style="background-color: #f5f5f5;">
+                        <th style="padding: 10px;">Usuário</th>
+                        <th style="padding: 10px;">Apelido</th>
+                        <th style="padding: 10px;" colspan="2">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitacao in lista_solicitacoes %}
+                        <tr>
+                            <td style="padding: 10px;">{{ solicitacao.username }}</td>
+                            <td style="padding: 10px;">{{ solicitacao.apelido|default:"-" }}</td>
+                            
+                            <td style="padding: 10px; width: 80px;">
+                                <form method="post" action="{% url 'gestao:aprovar_morador' solicitacao.pk %}" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background-color: #5cb85c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Aprovar</button>
+                                </form>
+                            </td>
+                            
+                            <td style="padding: 10px; width: 80px;">
+                                <form method="post" action="{% url 'gestao:rejeitar_morador' solicitacao.pk %}" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background-color: #d9534f; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Rejeitar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %} 
+    
+    {% if lista_confirmacoes_pendentes %}
+        <div style="background: #e6f7ff; border: 1px solid #b3e0ff; padding: 15px; border-radius: 5px; margin-top: 20px;">
+            <h3>Pagamentos para Confirmar</h3>
+            <p>Os seguintes usuários marcaram como "Paguei" e aguardam sua confirmação:</p>
+            
+            <table style="width: 100%;">
+                <thead>
+                    <tr style="background-color: #f5f5f5;">
+                        <th style="padding: 10px;">Usuário</th>
+                        <th style="padding: 10px;">Conta</th>
+                        <th style="padding: 10px;">Valor</th>
+                        <th style="padding: 10px;" colspan="2">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pendencia in lista_confirmacoes_pendentes %}
+                        <tr>
+                            <td style="padding: 10px;">{{ pendencia.usuario.username }}</td>
+                            <td style="padding: 10px;">{{ pendencia.conta.nome_conta }}</td>
+                            <td style="padding: 10px;">R$ {{ pendencia.valor_individual }}</td>
+                            
+                            <td style="padding: 10px; width: 80px;">
+                                <form method="post" action="{% url 'gestao:confirmar_pagamento' pendencia.pk %}" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type"submit" style="background-color: #5cb85c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Confirmar</button>
+                                </form>
+                            </td>
+                            
+                            <td style="padding: 10px; width: 80px;">
+                                <form method="post" action="{% url 'gestao:rejeitar_pagamento' pendencia.pk %}" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type"submit" style="background-color: #d9534f; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Rejeitar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+    {% if user.republica and user.status_associacao == "APROVADO" %}
+       
+    
+    <h3>Minhas Contas</h3>
+
+    {% if lista_pendencias %} <table>
+            <thead>
+                <tr>
+                    <th>Conta</th>
+                    <th>Valor Total (Conta)</th> <th>Valor (Meu)</th>
+                    <th>Vencimento</th>
+                    <th>Status do Meu Pagamento</th> </tr>
+            </thead>
+            <tbody>
+                {% for pendencia in lista_pendencias %}
+                    <tr>
+                        <td>{{ pendencia.conta.nome_conta }}</td>
+                        
+                        <td style="color: #666;">R$ {{ pendencia.conta.valor_total }}</td>
+                        
+                        <td class="valor">R$ {{ pendencia.valor_individual }}</td>
+                        
+                        <td>{{ pendencia.conta.data_vencimento|date:"d/m/Y" }}</td>
+                        
+                        <td>
+                            {% if pendencia.status_pagamento == 'NAO_PAGO' %}
+                                <form method="post" action="{% url 'gestao:marcar_pago' pendencia.pk %}" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-pagar">Paguei</button>
+                                </form>
+                            
+                            {% elif pendencia.status_pagamento == 'CONFIRMACAO_PENDENTE' %}
+                                <span style="color: #f0ad4e; font-weight: bold;">Aguardando Confirmação</span>
+                            
+                            {% elif pendencia.status_pagamento == 'PAGO' %}
+                                <span style="color: #5cb85c; font-weight: bold;">Pago</span>
+                            
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Nenhuma conta encontrada para você nesta república.</p>
+    {% endif %}
+
+
+    {% endif %} </body>
+</html>
