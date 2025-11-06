@@ -10,7 +10,9 @@ from .views import (
     RejeitarMoradorView,          # <-- ADICIONE ESTE
     ContaCreateView,
     ConfirmarPagamentoView,  # <-- ADICIONE
-    RejeitarPagamentoView    # <-- ADICIONE
+    RejeitarPagamentoView,   # <-- ADICIONE
+    ContaDeleteView,
+    RemoverMoradorView
 )
 
 app_name = 'gestao'
@@ -28,4 +30,6 @@ urlpatterns = [
     path('conta/nova/', ContaCreateView.as_view(), name='conta_nova'),
     path('confirmar-pagamento/<int:pk>/', ConfirmarPagamentoView.as_view(), name='confirmar_pagamento'),
     path('rejeitar-pagamento/<int:pk>/', RejeitarPagamentoView.as_view(), name='rejeitar_pagamento'),
+    path('conta/deletar/<int:pk>/', ContaDeleteView.as_view(), name='conta_delete'),
+    path('remover-morador/<int:pk>/', RemoverMoradorView.as_view(), name='remover_morador'),
 ]

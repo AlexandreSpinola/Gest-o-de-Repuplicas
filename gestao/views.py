@@ -1,6 +1,6 @@
 # gestao/views.py
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic import ListView, CreateView, View
+from django.views.generic import ListView, CreateView, View , DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages # Para dar feedback ao usuário
@@ -8,6 +8,8 @@ from .models import Conta, ParticipanteConta, Republica, Usuario
 from .forms import CustomUserCreationForm ,ContaCreateForm
 from datetime import date # Vamos usar para verificar contas atrasadas
 from django.db.models import Q 
+from django.contrib.auth import logout
+from django.http import HttpResponseRedirect
 
 # View de Registro (Você já tem essa)
 class RegisterView(CreateView):
@@ -48,6 +50,13 @@ class DashboardView(LoginRequiredMixin, ListView):
                 status_associacao=Usuario.StatusAssociacao.AGUARDANDO_APROVACAO
             )
             context['lista_solicitacoes'] = solicitacoes
+
+            # 2. NOVO: Busca moradores ATUAIS (aprovados)
+            moradores_atuais = Usuario.objects.filter(
+                republica=user.republica,
+                status_associacao=Usuario.StatusAssociacao.APROVADO
+            ).order_by('username')
+            context['lista_moradores'] = moradores_atuais
 
         # NOVO: Painel do RESPONSÁVEL (confirmar pagamentos)
         # Busca todas as participações onde:
@@ -262,17 +271,25 @@ class ContaCreateView(LoginRequiredMixin, CreateView):
         # 2. Salva a Conta principal (igual a antes)
         response = super().form_valid(form)
         
-        # 3. MUDANÇA: Pega a lista de participantes do formulário
+        # 3. MUDANÇA: Pega os participantes E FORÇA A INCLUSÃO DO CRIADOR
         nova_conta = self.object
-        participantes_selecionados = form.cleaned_data['participantes']
-        total_participantes = participantes_selecionados.count()
+        participantes_selecionados_do_form = form.cleaned_data['participantes']
+        
+        # Pega o próprio usuário logado como um QuerySet
+        criador_como_queryset = Usuario.objects.filter(pk=user.pk)
+        
+        # Usa o operador '|' (union) para juntar os dois QuerySets
+        # Isso garante que o criador esteja na lista, sem duplicatas.
+        participantes_finais = participantes_selecionados_do_form | criador_como_queryset
+        
+        total_participantes = participantes_finais.count()
         
         if total_participantes > 0:
-            # Divide o valor apenas entre os selecionados
+            # Divide o valor apenas entre os selecionados (e o criador)
             valor_individual = nova_conta.valor_total / total_participantes
             
             participantes_para_criar = []
-            for morador in participantes_selecionados:
+            for morador in participantes_finais:
                 participantes_para_criar.append(
                     ParticipanteConta(
                         conta=nova_conta,
@@ -285,8 +302,7 @@ class ContaCreateView(LoginRequiredMixin, CreateView):
             
             messages.success(self.request, f'Conta "{nova_conta.nome_conta}" criada para {total_participantes} participantes.')
         else:
-            # Isso não deve acontecer por causa do 'required=True', mas é bom ter
-            messages.warning(self.request, 'Conta criada, mas ninguém foi selecionado.')
+            messages.warning(self.request, 'Conta criada, mas algo estranho aconteceu.')
 
         return response
 
@@ -338,4 +354,103 @@ class RejeitarPagamentoView(LoginRequiredMixin, View):
         else:
             messages.warning(request, 'Esta ação não pôde ser executada.')
 
+        return redirect('gestao:dashboard')
+    
+class ContaDeleteView(LoginRequiredMixin, DeleteView):
+    model = Conta
+    template_name = 'gestao/conta_confirm_delete.html'
+    success_url = reverse_lazy('gestao:dashboard')
+    context_object_name = 'conta'
+
+    def get_queryset(self):
+        """
+        CHECAGEM DE SEGURANÇA:
+        Filtra o queryset para que um usuário só possa deletar
+        contas das quais ele é o RESPONSÁVEL.
+        """
+        return Conta.objects.filter(responsavel=self.request.user)
+
+    def form_valid(self, form):
+        messages.success(self.request, f"A conta '{self.object.nome_conta}' foi deletada com sucesso.")
+        return super().form_valid(form)
+    
+
+class UsuarioDeleteView(LoginRequiredMixin, DeleteView):
+    model = Usuario
+    template_name = 'gestao/usuario_confirm_delete.html'
+    success_url = reverse_lazy('login')
+
+    def get_object(self, queryset=None):
+        """ Garante que o usuário só pode deletar a si mesmo """
+        return self.request.user
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        # --- Nossas checagens de segurança (iguais a antes) ---
+        
+        # REGRA 1: É ADM de uma república?
+        try:
+            if user.republica_administrada:
+                messages.error(request, 'Você não pode deletar sua conta pois é ADM de uma república. Transfira a administração para outro morador primeiro.')
+                return redirect('gestao:dashboard')
+        except Usuario.republica_administrada.RelatedObjectDoesNotExist:
+            pass
+
+        # REGRA 2: É responsável por alguma conta?
+        if user.contas_responsaveis.exists():
+            messages.error(request, 'Você não pode deletar sua conta pois é o responsável por uma ou mais contas. Delete essas contas primeiro.')
+            return redirect('gestao:dashboard')
+        
+        
+        # --- A LÓGICA CORRIGIDA (DE NOVO) ---
+        
+        # 1. PRIMEIRO, deletamos o usuário do banco de dados
+        user.delete()
+        
+        # 2. SEGUNDO, fazemos o logout da sessão atual
+        logout(request)
+        
+        # 3. TERCEIRO, redirecionamos.
+        #    A MUDANÇA ESTÁ AQUI:
+        #    Em vez de chamar self.get_success_url() (que quebrou),
+        #    nós simplesmente usamos o valor de self.success_url
+        return HttpResponseRedirect(self.success_url)
+    
+    
+class RemoverMoradorView(LoginRequiredMixin, View):
+
+    def post(self, request, *args, **kwargs):
+        # 'pk' é o ID do usuário a ser removido
+        morador_pk = self.kwargs.get('pk')
+        morador_a_remover = get_object_or_404(Usuario, pk=morador_pk)
+        
+        # 'adm' é o usuário logado
+        adm = request.user
+
+        # CHECAGEM DE SEGURANÇA 1: O usuário logado é o ADM?
+        if not morador_a_remover.republica or morador_a_remover.republica.adm != adm:
+            messages.error(request, 'Você não tem permissão para remover este usuário.')
+            return redirect('gestao:dashboard')
+
+        # CHECAGEM DE SEGURANÇA 2: O ADM está tentando se remover?
+        if adm == morador_a_remover:
+            messages.error(request, 'Você não pode remover a si mesmo como administrador.')
+            return redirect('gestao:dashboard')
+            
+        # CHECAGEM DE SEGURANÇA 3: O morador é responsável por alguma conta?
+        if morador_a_remover.contas_responsaveis.exists():
+            messages.error(request, f'{morador_a_remover.username} é responsável por uma ou mais contas. Delete essas contas primeiro antes de removê-lo.')
+            return redirect('gestao:dashboard')
+
+        # Se passou por tudo, hora de remover.
+        # Primeiro, deletamos todas as participações dele em contas
+        ParticipanteConta.objects.filter(usuario=morador_a_remover).delete()
+        
+        # Agora, desvinculamos ele da república
+        morador_a_remover.republica = None
+        morador_a_remover.status_associacao = Usuario.StatusAssociacao.NAO_APROVADO
+        morador_a_remover.save()
+        
+        messages.success(request, f'{morador_a_remover.username} foi removido da república.')
         return redirect('gestao:dashboard')
