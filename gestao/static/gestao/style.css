@@ -1,0 +1,245 @@
+/* ---------------------------------
+   RESET BÁSICO E CONFIGURAÇÕES GLOBAIS
+   --------------------------------- */
+:root {
+    --cor-primaria: #007bff;
+    --cor-sucesso: #5cb85c;
+    --cor-perigo: #d9534f;
+    --cor-aviso: #f0ad4e;
+    --cor-info: #0275d8;
+    --cor-fundo: #f4f7f6;
+    --cor-texto: #333;
+    --cor-borda: #ddd;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+}
+
+/* ---------------------------------
+   NAVEGAÇÃO (HEADER)
+   --------------------------------- */
+.navbar {
+    background-color: #fff;
+    border-bottom: 1px solid var(--cor-borda);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--cor-primaria);
+    text-decoration: none;
+}
+.navbar-user {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* ---------------------------------
+   LAYOUT PRINCIPAL
+   --------------------------------- */
+.container {
+    max-width: 960px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+h1, h2, h3 {
+    color: var(--cor-texto);
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.4rem; }
+hr {
+    border: 0;
+    border-top: 1px solid var(--cor-borda);
+    margin: 2rem 0;
+}
+
+/* ---------------------------------
+   FORMULÁRIOS (Login, Registro, Criar Conta)
+   --------------------------------- */
+.form-container {
+    background: #fff;
+    border: 1px solid var(--cor-borda);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    max-width: 450px;
+    margin: 2rem auto;
+}
+.form-container h2 {
+    margin-top: 0;
+    text-align: center;
+}
+.form-container p, .form-container div {
+    margin-bottom: 1rem;
+}
+.form-container label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+.form-container input[type="text"],
+.form-container input[type="password"],
+.form-container input[type="email"],
+.form-container input[type="number"],
+.form-container input[type="date"],
+.form-container select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 4px;
+    box-sizing: border-box; /* Importante */
+}
+.form-container .helptext {
+    font-size: 0.8em;
+    color: #666;
+}
+.form-container .links {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+/* Checkboxes (Lista de Participantes) */
+.form-container ul {
+    list-style-type: none;
+    padding: 0;
+}
+.form-container ul li {
+    margin-bottom: 0.5rem;
+}
+.form-container ul li label {
+    display: inline-block;
+    font-weight: normal;
+    margin-left: 0.5rem;
+}
+
+/* ---------------------------------
+   BOTÕES GENÉRICOS
+   --------------------------------- */
+.btn {
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    color: white;
+    display: inline-block;
+    text-align: center;
+}
+.btn-full-width {
+    width: 100%;
+}
+.btn-primary { background-color: var(--cor-primaria); }
+.btn-primary:hover { background-color: #0069d9; }
+.btn-success { background-color: var(--cor-sucesso); }
+.btn-success:hover { background-color: #4cae4c; }
+.btn-danger { background-color: var(--cor-perigo); }
+.btn-danger:hover { background-color: #c9302c; }
+.btn-secondary { background-color: #aaa; }
+.btn-secondary:hover { background-color: #888; }
+
+/* ---------------------------------
+   MENSAGENS (Alertas)
+   --------------------------------- */
+.messages {
+    list-style-type: none; padding: 0; margin: 1em 0;
+}
+.messages li {
+    padding: 1rem; border-radius: 4px; margin-bottom: 10px; border: 1px solid;
+}
+.messages .success { background-color: #dff0d8; color: #3c763d; border-color: #d6e9c6; }
+.messages .error { background-color: #f2dede; color: #a94442; border-color: #ebccd1; }
+.messages .warning { background-color: #fcf8e3; color: #8a6d3b; border-color: #faebcc; }
+
+/* ---------------------------------
+   TABELAS (Dashboard)
+   --------------------------------- */
+.tabela {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden; /* Para o border-radius funcionar */
+}
+.tabela th, .tabela td {
+    border-bottom: 1px solid var(--cor-borda);
+    padding: 12px 15px;
+    text-align: left;
+    vertical-align: middle;
+}
+.tabela th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+.tabela tbody tr:last-child td {
+    border-bottom: none;
+}
+.tabela .atrasado { color: var(--cor-perigo); font-weight: bold; }
+.tabela .hoje { color: var(--cor-aviso); font-weight: bold; }
+.tabela .valor { font-weight: bold; color: var(--cor-info); }
+.tabela .pago { color: var(--cor-sucesso); font-weight: bold; }
+.tabela .pendente { color: var(--cor-aviso); font-weight: bold; }
+
+.tabela-acao {
+    text-align: center;
+}
+.tabela-acao .btn-pagar {
+    background-color: var(--cor-sucesso);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+.tabela-acao .link-danger {
+    color: var(--cor-perigo);
+    font-size: 0.9em;
+    text-decoration: none;
+}
+.tabela-acao .link-danger:hover {
+    text-decoration: underline;
+}
+
+/* ---------------------------------
+   PAINÉIS (Dashboard)
+   --------------------------------- */
+.painel {
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 2rem;
+    border: 1px solid;
+}
+.painel-adm {
+    background: #fff8e1; border-color: #ffeccc;
+}
+.painel-confirmacao {
+    background: #e6f7ff; border-color: #b3e0ff;
+}
+.painel-gerenciamento {
+    background: #fdeaea; border-color: #f5c6cb;
+}
+.painel-navegacao {
+    background: #fff;
+    border: 1px solid var(--cor-borda);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+.painel-navegacao .btn {
+    margin-right: 0.5rem;
+}

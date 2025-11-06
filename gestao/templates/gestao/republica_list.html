@@ -1,53 +1,40 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Encontrar República</title>
-    <style>
-        body { font-family: sans-serif; margin: 2em; background-color: #f4f7f6; }
-        h1, h2 { color: #333; }
-        .search-bar { margin-bottom: 20px; }
-        .search-bar input[type="text"] { padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 4px; }
-        .search-bar button { padding: 10px 15px; background-color: #0275d8; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        
-        .rep-list { list-style-type: none; padding: 0; }
-        .rep-item {
-            background: #fff; border: 1px solid #ddd;
-            padding: 15px 20px; margin-bottom: 10px;
-            border-radius: 5px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .btn-solicitar {
-            background-color: #5cb85c; color: white;
-            padding: 8px 12px; border: none;
-            border-radius: 4px; cursor: pointer;
-        }
-    </style>
-</head>
-<body>
+{% extends 'gestao/base.html' %}
+
+{% block title %}Encontrar República{% endblock %}
+
+{% block content %}
     <h1>Encontre sua República</h1>
 
-    <form class="search-bar" method="get">
-        <input type="text" name="q" placeholder="Digite o nome da república..." value="{{ request.GET.q }}">
-        <button type="submit">Buscar</button>
+    <form class="painel painel-navegacao" method="get">
+        <input type="text" name="q" placeholder="Digite o nome da república..." value="{{ request.GET.q }}" style="width: 300px; padding: 0.75rem;">
+        <button type="submit" class="btn btn-primary">Buscar</button>
     </form>
 
-    <ul class="rep-list">
-        {% for rep in republicas %}
-            <li class="rep-item">
-                <span>
-                    <strong>{{ rep.nome }}</strong>
-                    <small style="color: #555;">(Admin: {{ rep.adm.username }})</small>
-                </span>
-                
-                <form method="post" action="{% url 'gestao:solicitar_entrada' rep.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-solicitar">Pedir para Entrar</button>
-                </form>
-            </li>
-        {% empty %}
-            <li>Nenhuma república encontrada.</li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+    <table class="tabela" style="margin-top: 2rem;">
+        <thead>
+            <tr>
+                <th>Nome da República</th>
+                <th>Administrador</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rep in republicas %}
+                <tr>
+                    <td><strong>{{ rep.nome }}</strong></td>
+                    <td><span style="color: #555;">{{ rep.adm.username }}</span></td>
+                    <td class="tabela-acao">
+                        <form method="post" action="{% url 'gestao:solicitar_entrada' rep.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">Pedir para Entrar</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">Nenhuma república encontrada.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
