@@ -3,16 +3,29 @@
 {% block title %}Deletar Conta{% endblock %}
 
 {% block content %}
-    <div class="form-container" style="text-align: center;">
-        <form method="post">
+    <div class="form-container" style="text-align: center;" x-data="{ deleting: false }">
+        <form method="post" @submit="deleting = true">
             {% csrf_token %}
             <h2>Confirmar Exclusão</h2>
+            
             <p>Você tem certeza que deseja deletar permanentemente a conta:</p>
-            <h3 style="color: var(--cor-perigo);">"{{ conta.nome_conta }}" (R$ {{ conta.valor_total }})?</h3>
-            <p><strong>Esta ação não pode ser desfeita.</strong></T>
+            
+            <div style="background-color: #ffebee; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                <h3 style="color: var(--cor-perigo); margin: 0;">"{{ conta.nome_conta }}"</h3>
+                <p style="margin: 5px 0;">Valor Total: <strong>R$ {{ conta.valor_total }}</strong></p>
+            </div>
+
+            <p><strong>Esta ação não pode ser desfeita.</strong></p>
             <hr>
-            <button type="submit" class="btn btn-danger">Sim, tenho certeza</button>
-            <a href="{% url 'gestao:dashboard' %}" class="btn btn-secondary">Cancelar</a>
+            
+            <button type="submit" class="btn btn-danger" :disabled="deleting">
+                <span x-show="!deleting">Sim, tenho certeza</span>
+                <span x-show="deleting">Deletando...</span>
+            </button>
+            
+            <a href="{% url 'gestao:dashboard' %}" class="btn btn-secondary" :style="deleting ? 'pointer-events: none; opacity: 0.5;' : ''">
+                Cancelar
+            </a>
         </form>
     </div>
 {% endblock %}

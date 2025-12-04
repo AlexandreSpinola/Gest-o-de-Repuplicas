@@ -3,14 +3,25 @@
 {% block title %}Deletar Minha Conta{% endblock %}
 
 {% block content %}
-    <div class="form-container" style="text-align: center;">
-        <form method="post">
+    <div class="form-container" style="text-align: center;" x-data="{ processing: false }">
+        <form method="post" @submit="processing = true">
             {% csrf_token %}
-            <h2>DELETAR MINHA CONTA</h2>
+            <h2 style="color: var(--cor-perigo);">⚠ DELETAR MINHA CONTA</h2>
+            
             <p>Você tem certeza que deseja deletar permanentemente sua conta <strong>"{{ user.username }}"</strong>?</p>
-            <p style="color: var(--cor-perigo); font-weight: bold;">TODA a sua participação em contas será perdida. Esta ação não pode ser desfeita.</p>
+            
+            <div style="border: 1px solid var(--cor-perigo); color: var(--cor-perigo); padding: 1rem; border-radius: 4px; background: #fff5f5;">
+                <strong>ATENÇÃO:</strong>
+                <p style="margin-bottom: 0;">TODA a sua participação em contas será perdida.<br>Esta ação não pode ser desfeita.</p>
+            </div>
+            
             <hr>
-            <button type="submit" class="btn btn-danger">Sim, deletar minha conta</button>
+            
+            <button type="submit" class="btn btn-danger" :disabled="processing">
+                <span x-show="!processing">Sim, deletar minha conta</span>
+                <span x-show="processing">Processando...</span>
+            </button>
+            
             <a href="{% url 'gestao:dashboard' %}" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>

@@ -5,9 +5,12 @@
 {% block content %}
     <h1>Encontre sua República</h1>
 
-    <form class="painel painel-navegacao" method="get">
+    <form class="painel painel-navegacao" method="get" x-data="{ searching: false }" @submit="searching = true">
         <input type="text" name="q" placeholder="Digite o nome da república..." value="{{ request.GET.q }}" style="width: 300px; padding: 0.75rem;">
-        <button type="submit" class="btn btn-primary">Buscar</button>
+        <button type="submit" class="btn btn-primary" :disabled="searching">
+            <span x-show="!searching">Buscar</span>
+            <span x-show="searching">...</span>
+        </button>
     </form>
 
     <table class="tabela" style="margin-top: 2rem;">
@@ -24,15 +27,22 @@
                     <td><strong>{{ rep.nome }}</strong></td>
                     <td><span style="color: #555;">{{ rep.adm.username }}</span></td>
                     <td class="tabela-acao">
-                        <form method="post" action="{% url 'gestao:solicitar_entrada' rep.pk %}">
+                        <form method="post" action="{% url 'gestao:solicitar_entrada' rep.pk %}"
+                              x-data="{ requesting: false }" 
+                              @submit="requesting = true">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-success">Pedir para Entrar</button>
+                            <button type="submit" class="btn btn-success" :disabled="requesting">
+                                <span x-show="!requesting">Pedir para Entrar</span>
+                                <span x-show="requesting">Solicitando...</span>
+                            </button>
                         </form>
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="3">Nenhuma república encontrada.</td>
+                    <td colspan="3" style="text-align: center; padding: 2rem;">
+                        Nenhuma república encontrada. Tente outro nome.
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -3,14 +3,17 @@
 {% block title %}Criar Conta{% endblock %}
 
 {% block content %}
-    <div class="form-container">
-        <form method="post">
+    <div class="form-container" x-data="{ loading: false }">
+        <form method="post" @submit="loading = true">
             <h2>Criar Conta</h2>
             {% csrf_token %}
             
             {{ form.as_p }}
 
-            <button type="submit" class="btn btn-success btn-full-width">Registrar</button>
+            <button type="submit" class="btn btn-success btn-full-width" :disabled="loading">
+                <span x-show="!loading">Registrar</span>
+                <span x-show="loading">Criando conta...</span>
+            </button>
         </form>
 
         <div class="links">

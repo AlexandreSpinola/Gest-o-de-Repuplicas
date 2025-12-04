@@ -3,14 +3,57 @@
 {% block title %}Adicionar Nova Conta{% endblock %}
 
 {% block content %}
-    <div class="form-container">
-        <form method="post">
+    <div class="form-container" 
+         x-data="{ 
+            valorTotal: '', 
+            participantesSelecionados: 0,
+            loading: false,
+            
+            // Função para atualizar o cálculo quando algo muda
+            atualizarCalculo() {
+                // Pega o valor do input gerado pelo Django (geralmente id_valor_total)
+                let inputValor = document.getElementById('id_valor_total');
+                this.valorTotal = inputValor ? parseFloat(inputValor.value) : 0;
+
+                // Conta quantos checkboxes estão marcados
+                let checkboxes = document.querySelectorAll('input[type=checkbox]:checked');
+                this.participantesSelecionados = checkboxes.length;
+            },
+
+            // Calcula o valor individual (Selecionados + Você)
+            get valorIndividual() {
+                // Soma +1 pois o criador (você) sempre entra na conta
+                let totalPessoas = this.participantesSelecionados + 1;
+                
+                if (!this.valorTotal || isNaN(this.valorTotal)) return 0;
+                return (this.valorTotal / totalPessoas).toFixed(2);
+            }
+         }"
+         x-init="atualizarCalculo()" 
+         @change="atualizarCalculo()" 
+         @input="atualizarCalculo()">
+
+        <form method="post" @submit="loading = true">
             <h2>Adicionar Nova Conta</h2>
             {% csrf_token %}
             
             {{ form.as_p }}
 
-            <button type="submit" class="btn btn-success btn-full-width">Salvar Conta</button>
+            <div class="painel" style="background: #e3f2fd; border-color: #90caf9; margin-bottom: 1rem; padding: 1rem;">
+                <h4 style="margin-top: 0; color: #0d47a1;">Simulação da Divisão:</h4>
+                <p style="margin: 0; font-size: 0.9rem;">
+                    Valor Total: R$ <span x-text="valorTotal || '0.00'"></span><br>
+                    Dividido por: <strong x-text="participantesSelecionados + 1"></strong> pessoas (Você + <span x-text="participantesSelecionados"></span>)<br>
+                    <span style="font-size: 1.2rem; font-weight: bold; color: var(--cor-sucesso);">
+                        R$ <span x-text="valorIndividual"></span> para cada
+                    </span>
+                </p>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-full-width" :disabled="loading">
+                <span x-show="!loading">Salvar Conta</span>
+                <span x-show="loading">Salvando...</span>
+            </button>
         </form>
     </div>
 {% endblock %}

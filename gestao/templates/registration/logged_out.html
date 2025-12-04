@@ -3,9 +3,17 @@
 {% block title %}Você Saiu{% endblock %}
 
 {% block content %}
-    <div class="form-container" style="text-align: center;">
-        <h2>Você saiu!</h2>
-        <p>Obrigado por usar o sistema.</p>
-        <p><a href="{% url 'login' %}" class="btn btn-primary">Fazer login novamente</a></p>
+    <div class="form-container" style="text-align: center;" 
+         x-data="{ show: false }" 
+         x-init="setTimeout(() => show = true, 100)"
+         x-show="show"
+         x-transition.duration.500ms>
+         
+        <h2 style="color: var(--cor-primaria);">Você saiu!</h2>
+        <p>Sua sessão foi encerrada com segurança. Obrigado por usar o RepApp.</p>
+        <hr>
+        <p style="margin-top: 1.5rem;">
+            <a href="{% url 'login' %}" class="btn btn-primary">Fazer login novamente</a>
+        </p>
     </div>
 {% endblock %}

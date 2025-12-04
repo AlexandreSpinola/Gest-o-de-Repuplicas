@@ -3,14 +3,19 @@
 {% block title %}Criar República{% endblock %}
 
 {% block content %}
-    <div class="form-container">
-        <form method="post">
+    <div class="form-container" x-data="{ nome: '', loading: false }">
+        <form method="post" @submit="loading = true">
             <h2>Criar nova República</h2>
             {% csrf_token %}
             
             {{ form.as_p }}
 
-            <button type="submit" class="btn btn-success btn-full-width">Criar</button>
+            <button type="submit" class="btn btn-success btn-full-width" 
+                    :disabled="loading" 
+                    :class="{ 'btn-secondary': loading, 'btn-success': !loading }">
+                <span x-show="!loading">Criar República</span>
+                <span x-show="loading">Criando...</span>
+            </button>
         </form>
     </div>
 {% endblock %}

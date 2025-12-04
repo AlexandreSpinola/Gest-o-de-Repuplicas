@@ -8,6 +8,11 @@
     <title>{% block title %}Gestão de Repúblicas{% endblock %}</title>
 
     <link rel="stylesheet" href="{% static 'gestao/style.css' %}">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 <body>
 
@@ -28,11 +33,20 @@
     <main class="container">
 
         {% if messages %}
-            <ul class="messages">
+            <div class="messages-container">
                 {% for message in messages %}
-                    <li class="{{ message.tags }}">{{ message }}</li>
+                    <div x-data="{ show: true }" 
+                         x-show="show" 
+                         x-transition.duration.500ms
+                         class="message {{ message.tags }}"
+                         style="position: relative;">
+                        
+                        {{ message }}
+                        
+                        <button @click="show = false" style="float: right; background: none; border: none; font-weight: bold; cursor: pointer; color: inherit;">&times;</button>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         {% endif %}
 
         {% block content %}

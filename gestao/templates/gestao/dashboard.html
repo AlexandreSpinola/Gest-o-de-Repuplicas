@@ -4,205 +4,233 @@
 
 {% block content %}
 
-<h1>Dashboard</h1>
+<div x-data="{ 
+    tab: '{% if lista_solicitacoes or lista_confirmacoes_pendentes %}adm{% else %}contas{% endif %}' 
+}">
 
-<div class="painel painel-navegacao">
-    {% if not user.republica %}
-        <p>Você ainda não está em uma república.</p>
-        <a href="{% url 'gestao:republica_list' %}" class="btn btn-primary">Encontrar uma República</a>
-        <a href="{% url 'gestao:republica_nova' %}" class="btn btn-success">Criar minha República</a>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Dashboard</h1>
+        
+        {% if user.republica and user.status_associacao == "APROVADO" %}
+            <div class="tabs-header">
+                <button @click="tab = 'contas'" :class="{ 'active': tab === 'contas' }" class="btn-tab">
+                    Minhas Contas
+                </button>
+                
+                {% if user == user.republica.adm or lista_confirmacoes_pendentes %}
+                <button @click="tab = 'adm'" :class="{ 'active': tab === 'adm' }" class="btn-tab">
+                    Administração 
+                    {% if lista_solicitacoes or lista_confirmacoes_pendentes %}
+                        <span class="badge">!</span>
+                    {% endif %}
+                </button>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
 
-    {% elif user.status_associacao == "AGUARDANDO_APROVACAO" %}
-        <p style="color: var(--cor-aviso); font-weight: bold;">Sua solicitação para entrar em "{{ user.republica.nome }}" está aguardando aprovação do administrador.</p>
+    {% if not user.republica or user.status_associacao != "APROVADO" %}
+        <div class="painel painel-navegacao">
+            {% if not user.republica %}
+                <p>Você ainda não está em uma república.</p>
+                <a href="{% url 'gestao:republica_list' %}" class="btn btn-primary">Encontrar uma República</a>
+                <a href="{% url 'gestao:republica_nova' %}" class="btn btn-success">Criar minha República</a>
 
-    {% else %}
-        <h3>República: {{ user.republica.nome }}</h3>
-        <a href="{% url 'gestao:conta_nova' %}" class="btn btn-success">+ Adicionar Nova Conta</a>
+            {% elif user.status_associacao == "AGUARDANDO_APROVACAO" %}
+                <p style="color: var(--cor-aviso); font-weight: bold;">Sua solicitação para entrar em "{{ user.republica.nome }}" está aguardando aprovação do administrador.</p>
+            {% endif %}
+        </div>
     {% endif %}
+
+
+    <div x-show="tab === 'adm'" x-transition.opacity>
+        
+        {% if lista_solicitacoes %}
+            <div class="painel painel-adm">
+                <h3>Solicitações de Entrada</h3>
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th colspan="2">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for solicitacao in lista_solicitacoes %}
+                            <tr>
+                                <td>{{ solicitacao.username }} ({{ solicitacao.apelido|default:"Sem apelido" }})</td>
+                                <td class="tabela-acao" style="display: flex; gap: 5px; justify-content: center;">
+                                    
+                                    <form method="post" action="{% url 'gestao:aprovar_morador' solicitacao.pk %}"
+                                          x-data="{ loading: false }" @submit="loading = true">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success" :disabled="loading">
+                                            <span x-show="!loading">Aprovar</span>
+                                            <span x-show="loading">...</span>
+                                        </button>
+                                    </form>
+
+                                    <form method="post" action="{% url 'gestao:rejeitar_morador' solicitacao.pk %}"
+                                          x-data="{ loading: false }" @submit="loading = true">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger" :disabled="loading">
+                                            <span x-show="!loading">Rejeitar</span>
+                                            <span x-show="loading">...</span>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if lista_confirmacoes_pendentes %}
+            <div class="painel painel-confirmacao">
+                <h3>Pagamentos para Confirmar</h3>
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>Quem pagou?</th>
+                            <th>Conta</th>
+                            <th>Valor</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pendencia in lista_confirmacoes_pendentes %}
+                            <tr>
+                                <td>{{ pendencia.usuario.username }}</td>
+                                <td>{{ pendencia.conta.nome_conta }}</td>
+                                <td>R$ {{ pendencia.valor_individual }}</td>
+                                <td class="tabela-acao" style="display: flex; gap: 5px; justify-content: center;">
+                                    <form method="post" action="{% url 'gestao:confirmar_pagamento' pendencia.pk %}"
+                                          x-data="{ loading: false }" @submit="loading = true">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success" :disabled="loading">
+                                            Confirmar
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'gestao:rejeitar_pagamento' pendencia.pk %}"
+                                          x-data="{ loading: false }" @submit="loading = true">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger" :disabled="loading">
+                                            Rejeitar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if lista_moradores %}
+            <div class="painel painel-gerenciamento">
+                <h3>Moradores da República</h3>
+                <table class="tabela">
+                    <thead>
+                        <tr><th>Usuário</th><th>Ação</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for morador in lista_moradores %}
+                            <tr>
+                                <td>
+                                    {{ morador.username }}
+                                    {% if morador == user %} <strong>(Você)</strong> {% endif %}
+                                </td>
+                                <td class="tabela-acao">
+                                    {% if morador != user %}
+                                        <form method="post" action="{% url 'gestao:remover_morador' morador.pk %}"
+                                              x-data="{ loading: false }" 
+                                              @submit="if(!confirm('Tem certeza que deseja remover este morador?')) { $event.preventDefault(); } else { loading = true; }">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger" :disabled="loading">Remover</button>
+                                        </form>
+                                    {% else %} - {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+
+    <div x-show="tab === 'contas'" x-transition.opacity>
+        
+        {% if user.republica and user.status_associacao == "APROVADO" %}
+            <div style="margin: 1rem 0; text-align: right;">
+                <a href="{% url 'gestao:conta_nova' %}" class="btn btn-success">+ Nova Conta</a>
+            </div>
+
+            {% if lista_pendencias %}
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>Conta</th>
+                            <th>Valor (Meu)</th>
+                            <th>Vencimento</th>
+                            <th>Status / Ação</th>
+                            <th>Gerenciar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pendencia in lista_pendencias %}
+                            <tr>
+                                <td>
+                                    <strong>{{ pendencia.conta.nome_conta }}</strong><br>
+                                    <small style="color: #888;">Total: R$ {{ pendencia.conta.valor_total }}</small>
+                                </td>
+                                <td class="valor">R$ {{ pendencia.valor_individual }}</td>
+                                <td>
+                                    {% if pendencia.conta.data_vencimento < hoje %}
+                                        <span class="atrasado">{{ pendencia.conta.data_vencimento|date:"d/m" }}</span>
+                                    {% elif pendencia.conta.data_vencimento == hoje %}
+                                        <span class="hoje">Hoje!</span>
+                                    {% else %}
+                                        {{ pendencia.conta.data_vencimento|date:"d/m" }}
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if pendencia.status_pagamento == 'NAO_PAGO' %}
+                                        <form method="post" action="{% url 'gestao:marcar_pago' pendencia.pk %}"
+                                              x-data="{ loading: false }" @submit="loading = true">
+                                            {% csrf_token %}
+                                            <button type="submit" class="tabela-acao btn-pagar" :disabled="loading" style="width: 100%;">
+                                                <span x-show="!loading">Pagar</span>
+                                                <span x-show="loading">...</span>
+                                            </button>
+                                        </form>
+                                    {% elif pendencia.status_pagamento == 'CONFIRMACAO_PENDENTE' %}
+                                        <span class="pendente">Aguardando...</span>
+                                    {% elif pendencia.status_pagamento == 'PAGO' %}
+                                        <span class="pago">✔ Pago</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="tabela-acao">
+                                    {% if pendencia.conta.responsavel == user %}
+                                        <a href="{% url 'gestao:conta_delete' pendencia.conta.pk %}" class="link-danger">Deletar</a>
+                                    {% else %}
+                                        <small>-</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div style="text-align: center; padding: 2rem;">
+                    <p>Tudo pago! Você não tem pendências. 🎉</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
 </div>
-
-
-{% if lista_solicitacoes %}
-    <div class="painel painel-adm">
-        <h3>Solicitações Pendentes</h3>
-        <p>Os seguintes usuários pediram para entrar na sua república:</p>
-
-        <table class="tabela">
-            <thead>
-                <tr>
-                    <th>Usuário</th>
-                    <th>Apelido</th>
-                    <th colspan="2">Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for solicitacao in lista_solicitacoes %}
-                    <tr>
-                        <td>{{ solicitacao.username }}</td>
-                        <td>{{ solicitacao.apelido|default:"-" }}</td>
-
-                        <td class="tabela-acao">
-                            <form method="post" action="{% url 'gestao:aprovar_morador' solicitacao.pk %}" style="margin: 0;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-success">Aprovar</button>
-                            </form>
-                        </td>
-                        <td class="tabela-acao">
-                            <form method="post" action="{% url 'gestao:rejeitar_morador' solicitacao.pk %}" style="margin: 0;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger">Rejeitar</button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% endif %}
-
-
-{% if lista_moradores %}
-    <div class="painel painel-gerenciamento">
-        <h3>Gerenciar Moradores Atuais</h3>
-
-        <table class="tabela">
-            <thead>
-                <tr>
-                    <th>Usuário</th>
-                    <th>Apelido</th>
-                    <th>Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for morador in lista_moradores %}
-                    <tr>
-                        <td>
-                            {{ morador.username }}
-                            {% if morador == user %} (Você - ADM) {% endif %}
-                        </td>
-                        <td>{{ morador.apelido|default:"-" }}</td>
-
-                        <td class="tabela-acao">
-                            {% if morador != user %}
-                                <form method="post" action="{% url 'gestao:remover_morador' morador.pk %}" style="margin: 0;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger">Remover</button>
-                                </form>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% endif %}
-
-
-{% if lista_confirmacoes_pendentes %}
-    <div class="painel painel-confirmacao">
-        <h3>Pagamentos para Confirmar</h3>
-        <p>Os seguintes usuários marcaram como "Paguei":</p>
-
-        <table class="tabela">
-            <thead>
-                <tr>
-                    <th>Usuário</th>
-                    <th>Conta</th>
-                    <th>Valor</th>
-                    <th colspan="2">Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pendencia in lista_confirmacoes_pendentes %}
-                    <tr>
-                        <td>{{ pendencia.usuario.username }}</td>
-                        <td>{{ pendencia.conta.nome_conta }}</td>
-                        <td>R$ {{ pendencia.valor_individual }}</td>
-
-                        <td class="tabela-acao">
-                            <form method="post" action="{% url 'gestao:confirmar_pagamento' pendencia.pk %}" style="margin: 0;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-success">Confirmar</button>
-                            </form>
-                        </td>
-                        <td class="tabela-acao">
-                            <form method="post" action="{% url 'gestao:rejeitar_pagamento' pendencia.pk %}" style="margin: 0;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger">Rejeitar</button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% endif %}
-
-
-{% if user.republica and user.status_associacao == "APROVADO" %}
-
-    <h3>Minhas Contas</h3>
-
-    {% if lista_pendencias %}
-        <table class="tabela">
-            <thead>
-                <tr>
-                    <th>Conta</th>
-                    <th>Valor Total</th>
-                    <th>Valor (Meu)</th>
-                    <th>Vencimento</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pendencia in lista_pendencias %}
-                    <tr>
-                        <td>{{ pendencia.conta.nome_conta }}</td>
-                        <td style="color: #666;">R$ {{ pendencia.conta.valor_total }}</td>
-                        <td class="valor">R$ {{ pendencia.valor_individual }}</td>
-                        <td>
-                            {% if pendencia.conta.data_vencimento < hoje %}
-                                <span class="atrasado">{{ pendencia.conta.data_vencimento|date:"d/m/Y" }}</span>
-                            {% elif pendencia.conta.data_vencimento == hoje %}
-                                <span class="hoje">{{ pendencia.conta.data_vencimento|date:"d/m/Y" }}</span>
-                            {% else %}
-                                {{ pendencia.conta.data_vencimento|date:"d/m/Y" }}
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            {% if pendencia.status_pagamento == 'NAO_PAGO' %}
-                                <form method="post" action="{% url 'gestao:marcar_pago' pendencia.pk %}" style="margin: 0;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="tabela-acao btn-pagar">Paguei</button>
-                                </form>
-                            {% elif pendencia.status_pagamento == 'CONFIRMACAO_PENDENTE' %}
-                                <span class="pendente">Aguardando</span>
-                            {% elif pendencia.status_pagamento == 'PAGO' %}
-                                <span class="pago">Pago</span>
-                            {% endif %}
-                        </td>
-
-                        <td class="tabela-acao">
-                            {% if pendencia.conta.responsavel == user %}
-                                <a href="{% url 'gestao:conta_delete' pendencia.conta.pk %}" class="link-danger">
-                                    Deletar
-                                </a>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Parabéns! Você não tem nenhuma pendência no momento.</p>
-    {% endif %}
-
-{% endif %}
-
 {% endblock %}

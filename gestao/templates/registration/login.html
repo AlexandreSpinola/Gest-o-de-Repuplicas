@@ -3,18 +3,23 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
-    <div class="form-container">
-        <form method="post">
+    <div class="form-container" x-data="{ loading: false }">
+        <form method="post" @submit="loading = true">
             <h2>Login</h2>
             {% csrf_token %}
             
             {% if form.errors %}
-                <p style="color: var(--cor-perigo);">Usuário ou senha inválidos. Tente novamente.</p>
+                <div style="background-color: #ffebee; color: var(--cor-perigo); padding: 10px; border-radius: 4px; margin-bottom: 15px; border: 1px solid var(--cor-perigo);">
+                    Usuário ou senha inválidos. Tente novamente.
+                </div>
             {% endif %}
 
             {{ form.as_p }}
 
-            <button type="submit" class="btn btn-primary btn-full-width">Entrar</button>
+            <button type="submit" class="btn btn-primary btn-full-width" :disabled="loading">
+                <span x-show="!loading">Entrar</span>
+                <span x-show="loading">Entrando...</span>
+            </button>
         </form>
 
         <div class="links">
